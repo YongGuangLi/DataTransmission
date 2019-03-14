@@ -28,8 +28,8 @@ public class RedisListenerConfig {
  
 	@Bean
     MessageListenerAdapter listenerAdapter() {
-		RedisMessageListener redisMessageListener = new RedisMessageListener();
-		redisMessageListener.getStationConnectConfig(jdbcTemplate);
+		RedisMessageListener redisMessageListener = new RedisMessageListener();  
+		redisMessageListener.getStationConnectConfig(jdbcTemplate);               //也可通过RedisMessageListener构造函数传入
         return new MessageListenerAdapter(redisMessageListener);
     }
 	
