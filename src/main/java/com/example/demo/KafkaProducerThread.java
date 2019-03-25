@@ -28,9 +28,9 @@ public class KafkaProducerThread extends Thread {
 	} 
 	
 	//flag:0-主主站  flag:1-附属主站
-	public void CreateKafkaConnect(String connId,String domainName, String port, int flag) { 
+	public void CreateKafkaConnect(String connId,String servers, int flag) { 
 		Properties props = new Properties();
-		props.put("bootstrap.servers", String.format("%s:%s", domainName, port)); 
+		props.put("bootstrap.servers", servers); 
 		props.put("acks", "all");
 		props.put("retries", 2);
 		props.put("batch.size", 16384);
@@ -50,9 +50,9 @@ public class KafkaProducerThread extends Thread {
 		}
 	}
 	
-	public void ModifyKafkaConnect(String connId,String domainName, String port, int flag){
+	public void ModifyKafkaConnect(String connId,String servers, int flag){
 		DeleteKafkaConnect(connId, flag);
-		CreateKafkaConnect(connId, domainName, port, flag);
+		CreateKafkaConnect(connId, servers, flag);
 	}
 	
 	public void DeleteKafkaConnect(String connId,int flag){

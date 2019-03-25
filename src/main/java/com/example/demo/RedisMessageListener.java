@@ -22,19 +22,31 @@ public class RedisMessageListener implements MessageListener {
 		kafkaProducerThread.start();  
 	}
 
+	String getServersByDataChannelName(String dataChannelNames, String dataChannelPort){
+		String servers = null;
+		for (String dataChannelName : dataChannelNames.split(",")) {  
+			if (servers == null)  
+				servers = String.format("%s:%s", dataChannelName, dataChannelPort); 
+			else  
+				servers += String.format(",%s:%s", dataChannelName, dataChannelPort);  
+		}
+		return servers;
+	}
 	public void getStationConnectConfig(JdbcTemplate jdbcTemplate) { 
 		String sql = "select Id,DataChannelName,DataChannelPort,MainFlag from station_connect_config";
 		List<Map<String, Object>> list = jdbcTemplate.queryForList(sql);
 		for (Map<String, Object> map : list) {
 			
 			String connId = (String) map.get("Id");
-			String dataChannelName = (String) map.get("DataChannelName");
+			String dataChannelNames = (String) map.get("DataChannelName");
 			String dataChannelPort = (String) map.get("DataChannelPort");
 			int mainFlag = Integer.parseInt((String) map.get("MainFlag")); 
 			
-			logger.info(String.format("%s %s %s %d", connId, dataChannelName, dataChannelPort, mainFlag)); 
+			String servers = getServersByDataChannelName(dataChannelNames, dataChannelPort);
 			
-			kafkaProducerThread.CreateKafkaConnect(connId,dataChannelName, dataChannelPort, mainFlag); 
+			logger.info(String.format("%s %s %d", connId, servers , mainFlag)); 
+			
+			kafkaProducerThread.CreateKafkaConnect(connId,servers, mainFlag);
 		}
 	}
 	
@@ -107,19 +119,20 @@ public class RedisMessageListener implements MessageListener {
 				NetworkCollect.StationConnectConfig stationConnectConfig = mainMessage.getStationConnectConfig();
 				String connId = stationConnectConfig.getId();
 				String dataChannelIp = stationConnectConfig.getDataChannelIp();
-				String dataChannelName = stationConnectConfig.getDataChannelName();
+				String dataChannelNames = stationConnectConfig.getDataChannelName();
 				String dataChannelPort = stationConnectConfig.getDataChannelPort();
 				int mainFlag = stationConnectConfig.getMainFlag();
 				NetworkCollect.RemoteSetType remoteSetType = stationConnectConfig.getSetType();
-
-				logger.info(String.format("%s %s %s %s %s", connId, dataChannelIp, dataChannelName, dataChannelPort, remoteSetType.toString()));
-
+				
+				String servers = getServersByDataChannelName(dataChannelNames, dataChannelPort);
+				
+				logger.info(String.format("%s %s %d %s", connId, servers , mainFlag, remoteSetType)); 
 				switch (remoteSetType) {
 				case RST_ADD:
-					kafkaProducerThread.CreateKafkaConnect(connId,dataChannelName, dataChannelPort, mainFlag);
+					kafkaProducerThread.CreateKafkaConnect(connId,servers, mainFlag);
 					break;
 				case RST_MODIFY:
-					kafkaProducerThread.ModifyKafkaConnect(connId,dataChannelName, dataChannelPort, mainFlag);
+					kafkaProducerThread.ModifyKafkaConnect(connId,servers, mainFlag);
 					break;
 				case RST_DELETE:
 					kafkaProducerThread.DeleteKafkaConnect(connId, mainFlag);
@@ -127,7 +140,7 @@ public class RedisMessageListener implements MessageListener {
 				default:
 					break;
 				}
-				break;
+				break; 
 			default:
 				break;
 			}
