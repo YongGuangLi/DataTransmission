@@ -29,6 +29,7 @@ public class KafkaProducerThread extends Thread {
 	
 	//flag:0-主主站  flag:1-附属主站
 	public void CreateKafkaConnect(String connId,String servers, int flag) { 
+		
 		Properties props = new Properties();
 		props.put("bootstrap.servers", servers); 
 		props.put("acks", "all");
@@ -38,18 +39,36 @@ public class KafkaProducerThread extends Thread {
 		props.put("buffer.memory", 33554432);  
 		props.put("max.request.size", 10485760);  
 		props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-		props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+		props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer"); 
+		
+		 
 		KafkaProducer<String, String> producer = new KafkaProducer<>(props);
-
+		
 		synchronized (KafkaProducerThread.class) {
 			if (flag == 0) { 
 				mapMainKafkaProducer.put(connId, producer);
 			} else if(flag == 1) {
 				mapSubKafkaProducer.put(connId, producer);
 			}
-		}
+		} 
 	}
 	
+	public boolean isContainsKafkaConnect(String connId, int flag){
+		synchronized (KafkaProducerThread.class) {
+			if (flag == 0) { 
+				if(mapMainKafkaProducer.containsKey(connId))
+				{ 
+					return true;
+				}
+			} else if(flag == 1) { 
+				if(mapSubKafkaProducer.containsKey(connId))
+				{  
+					return true;
+				} 
+			} 
+			return false;
+		}
+	}
 	public void ModifyKafkaConnect(String connId,String servers, int flag){
 		DeleteKafkaConnect(connId, flag);
 		CreateKafkaConnect(connId, servers, flag);
